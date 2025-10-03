@@ -2,9 +2,7 @@ package io.github.viciscat.bhc;
 
 import com.google.common.collect.Lists;
 import io.github.viciscat.bhc.mixin.FontManagerAccessor;
-import io.github.viciscat.bhc.mixin.LifecycledResourceManagerImplAccessor;
 import io.github.viciscat.bhc.mixin.MinecraftClientAccessor;
-import io.github.viciscat.bhc.mixin.ReloadableResourceManagerImplAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.FontFilterType;
 import net.minecraft.client.font.FontManager;
@@ -34,11 +32,10 @@ public class AddVanillaFont implements ResourceReloader {
     @Override
     //? if >=1.21.9 {
     public CompletableFuture<Void> reload(Store store, Executor prepareExecutor, Synchronizer synchronizer, Executor applyExecutor) {
-        ResourceManager manager = store.getResourceManager();
     //?} else {
     /*public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Executor prepareExecutor, Executor applyExecutor) {
     *///?}
-        return CompletableFuture.supplyAsync(() -> loadVanillaIndex(manager), prepareExecutor)
+        return CompletableFuture.supplyAsync(this::loadVanillaIndex, prepareExecutor)
                 .thenCompose(synchronizer::whenPrepared)
                 .thenAcceptAsync(index -> {
                     MinecraftClient mc = MinecraftClient.getInstance();
@@ -60,21 +57,13 @@ public class AddVanillaFont implements ResourceReloader {
                 }, applyExecutor);
     }
 
-    private FontManager.ProviderIndex loadVanillaIndex(ResourceManager manager) {
-        LifecycledResourceManagerImpl impl;
-        if (manager instanceof LifecycledResourceManagerImpl) {
-            impl = (LifecycledResourceManagerImpl) manager;
-        } else if (manager instanceof ReloadableResourceManagerImpl reloadableResourceManager) {
-            LifecycledResourceManager lifecycledResourceManager = ((ReloadableResourceManagerImplAccessor) reloadableResourceManager).getActiveManager();
-            if (lifecycledResourceManager instanceof LifecycledResourceManagerImpl) {
-                impl = (LifecycledResourceManagerImpl) lifecycledResourceManager;
-            } else throw new RuntimeException("Invalid resource manager");
-        } else  {
-            throw new RuntimeException("Invalid resource manager");
-        }
+    private FontManager.ProviderIndex loadVanillaIndex() {
+        DefaultResourcePack pack = MinecraftClient.getInstance().getDefaultResourcePack();
+        NamespaceResourceManager resourceManager = new NamespaceResourceManager(ResourceType.CLIENT_RESOURCES, "minecraft");
+        resourceManager.addPack(pack);
         MinecraftClientAccessor mc = (MinecraftClientAccessor) MinecraftClient.getInstance();
         FontManagerAccessor fontManager = (FontManagerAccessor) mc.getFontManager();
-        return fontManager.invokeLoadIndex(((LifecycledResourceManagerImplAccessor) impl).getSubManagers().get("minecraft"), Runnable::run).join();
+        return fontManager.invokeLoadIndex(resourceManager, Runnable::run).join();
     }
 
     //? if <1.21.9 {

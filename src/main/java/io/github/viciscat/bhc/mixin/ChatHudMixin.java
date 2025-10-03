@@ -4,10 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
-import io.github.viciscat.bhc.CenteredLine;
-import io.github.viciscat.bhc.ChatConstants;
-import io.github.viciscat.bhc.CustomLineRenderer;
-import io.github.viciscat.bhc.SeparationLine;
+import io.github.viciscat.bhc.*;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
@@ -19,7 +16,6 @@ import net.minecraft.text.*;
 import net.minecraft.util.math.ColorHelper;
 import net.minecraft.util.math.MathHelper;
 import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -32,9 +28,6 @@ import java.util.*;
 
 @Mixin(ChatHud.class)
 public abstract class ChatHudMixin {
-    // - ▬
-    @Unique
-    private static final int DEFAULT_WIDTH = 320;
 
     @Shadow
     @Final
@@ -74,36 +67,53 @@ public abstract class ChatHudMixin {
     private void customLine(ChatHudLine message, CallbackInfo ci, @Local LocalRef<List<OrderedText>> localRef) {
         localRef.set(List.of());
         List<MutableText> texts;
+        // The TextBuilders are there to remove THE DANG FORMATTING CODES WHY DO THEY STILL USE THEM AAAAAAAAAAAAAAAAAAAA
         if (message.content().getString().contains("\n")) {
             texts = new LinkedList<>();
             texts.add(Text.empty());
             message.content().visit((style, asString) -> {
                 String[] split = asString.split("\n");
-                texts.getLast().append(Text.literal(split[0]).setStyle(style));
+                if (split.length == 0) {
+                    TextBuilder tb = new TextBuilder();
+                    TextVisitFactory.visitFormatted(asString, style, tb);
+                    texts.getLast().append(tb.getText());
+                    return Optional.empty();
+                }
+                TextBuilder tb = new TextBuilder();
+                TextVisitFactory.visitFormatted(split[0], style, tb);
+                texts.getLast().append(tb.getText());
                 for (int i = 1; i < split.length; i++) {
-                    texts.add(Text.empty().append(Text.literal(split[i]).setStyle(style)));
+                    tb = new TextBuilder();
+                    TextVisitFactory.visitFormatted(split[i], style, tb);
+                    texts.add(Text.empty().append(tb.getText()));
                 }
                 return Optional.empty();
             }, Style.EMPTY);
         } else {
-            texts = Collections.singletonList(message.content().copy());
+            MutableText text = Text.empty();
+            message.content().visit((style, asString) -> {
+                TextBuilder tb = new TextBuilder();
+                TextVisitFactory.visitFormatted(asString, style, tb);
+                text.append(tb.getText());
+                return Optional.empty();
+            }, Style.EMPTY);
+            texts = Collections.singletonList(text);
         }
+        //System.out.println(texts);
 
         TextRenderer textRenderer = client.textRenderer;
         for (MutableText text : texts) {
             String string = text.getString();
             String trimmed = string.trim();
             // check if the text is all -
-            if (trimmed.chars().allMatch(c -> c == '-' || c == '—')) {
+            if (!trimmed.isEmpty() && trimmed.chars().allMatch(c -> c == '-' || c == '—')) {
                 ChatHudLine.Visible visible = new ChatHudLine.Visible(message.creationTick(), text.asOrderedText(), message.indicator(), true);
                 visibleMessages.addFirst(visible);
-                TextColor color = getColor(text);
-                customLineRenderers.put(visible, new SeparationLine(color == null ? -1 : ColorHelper.fullAlpha(color.getRgb()), 1));
-            } else if (trimmed.chars().allMatch(c -> c == '▬')) {
+                customLineRenderers.put(visible, new SeparationLine(getFirstColor(text).map(color -> ColorHelper.fullAlpha(color.getRgb())).orElse(-1), 1));
+            } else if (!trimmed.isEmpty() && trimmed.chars().allMatch(c -> c == '▬')) {
                 ChatHudLine.Visible visible = new ChatHudLine.Visible(message.creationTick(), text.asOrderedText(), message.indicator(), true);
                 visibleMessages.addFirst(visible);
-                TextColor color = getColor(text);
-                customLineRenderers.put(visible, new SeparationLine(color == null ? -1 : ColorHelper.fullAlpha(color.getRgb()), 3));
+                customLineRenderers.put(visible, new SeparationLine(getFirstColor(text).map(color -> ColorHelper.fullAlpha(color.getRgb())).orElse(-1), 3));
             } else if (string.startsWith(" ") && !trimmed.isEmpty()) {
                 // find last space in the string
                 int i;
@@ -124,9 +134,11 @@ public abstract class ChatHudMixin {
                 }, Style.EMPTY);
 
                 String s = string.substring(0, i);
-                int leadingSpace = textRenderer.getWidth(s);
+                int leadingSpace = textRenderer.getWidth(withFont(Text.literal(s)));
                 int textWidth = textRenderer.getWidth(withFont(trimmedText));
                 int abs = Math.abs(ChatConstants.DEFAULT_WIDTH / 2 - (leadingSpace + textWidth / 2));
+                //System.out.println("trimmedText: " + withFont(trimmedText));
+                //System.out.println("leadingSpace: " +  leadingSpace + " textWidth: " + textWidth + " abs: " + abs);
                 if (abs < 6) { // if true this text is supposed to be centered!
                     List<OrderedText> list = ChatMessages.breakRenderedChatMessageLines(trimmedText, getScaledWidth(), textRenderer);
                     for (int j = 0; j < list.size(); j++) {
@@ -157,9 +169,8 @@ public abstract class ChatHudMixin {
     }
 
     @Unique
-    private @Nullable TextColor getColor(MutableText text) {
-        List<Text> siblings = text.getSiblings();
-        return siblings.isEmpty() ? text.getStyle().getColor() : siblings.getFirst().getStyle().getColor();
+    private Optional<TextColor> getFirstColor(MutableText text) {
+        return text.visit((style, asString) -> Optional.ofNullable(style.getColor()), Style.EMPTY);
     }
 
     @Inject(method = "refresh", at = @At("HEAD"))
