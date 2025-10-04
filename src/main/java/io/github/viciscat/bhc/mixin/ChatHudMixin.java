@@ -67,40 +67,10 @@ public abstract class ChatHudMixin {
     private void customLine(ChatHudLine message, CallbackInfo ci, @Local LocalRef<List<OrderedText>> localRef) {
         if (!BetterHypixelChatMod.isOnHypixel()) return;
         localRef.set(List.of());
-        List<MutableText> texts;
-        // The TextBuilders are there to remove THE DANG FORMATTING CODES WHY DO THEY STILL USE THEM AAAAAAAAAAAAAAAAAAAA
-        if (message.content().getString().contains("\n")) {
-            texts = new LinkedList<>();
-            texts.add(Text.empty());
-            message.content().visit((style, asString) -> {
-                String[] split = asString.split("\n");
-                if (split.length == 0) {
-                    TextBuilder tb = new TextBuilder();
-                    TextVisitFactory.visitFormatted(asString, style, tb);
-                    texts.getLast().append(tb.getText());
-                    return Optional.empty();
-                }
-                TextBuilder tb = new TextBuilder();
-                TextVisitFactory.visitFormatted(split[0], style, tb);
-                texts.getLast().append(tb.getText());
-                for (int i = 1; i < split.length; i++) {
-                    tb = new TextBuilder();
-                    TextVisitFactory.visitFormatted(split[i], style, tb);
-                    texts.add(Text.empty().append(tb.getText()));
-                }
-                return Optional.empty();
-            }, Style.EMPTY);
-        } else {
-            MutableText text = Text.empty();
-            message.content().visit((style, asString) -> {
-                TextBuilder tb = new TextBuilder();
-                TextVisitFactory.visitFormatted(asString, style, tb);
-                text.append(tb.getText());
-                return Optional.empty();
-            }, Style.EMPTY);
-            texts = Collections.singletonList(text);
-        }
-        //System.out.println(texts);
+        // split all inner linebreaks and remove chat formattings.
+        TextBuilder builder = new TextBuilder();
+        message.content().asOrderedText().accept(builder);
+        Collection<MutableText> texts = builder.getTexts();
 
         TextRenderer textRenderer = client.textRenderer;
         for (MutableText text : texts) {
