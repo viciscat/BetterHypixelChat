@@ -54,6 +54,9 @@ loom {
     }
     accessWidenerPath = parent?.file("src/main/resources/better_hypixel_chat.accesswidener")
 
+    mixin {
+        useLegacyMixinAp.set(false)
+    }
 
 }
 
