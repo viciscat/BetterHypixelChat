@@ -3,6 +3,7 @@ package io.github.viciscat.bhc.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import io.github.viciscat.bhc.*;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -26,6 +27,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 
 @Mixin(ChatHud.class)
 public abstract class ChatHudMixin {
@@ -47,15 +49,6 @@ public abstract class ChatHudMixin {
     @Final
     private MinecraftClient client;
 
-    @Shadow
-    public abstract boolean isChatFocused();
-
-    @Shadow
-    private boolean hasUnreadNewMessages;
-
-    @Shadow
-    public abstract void scroll(int scroll);
-
     @Unique
     private final Map<ChatHudLine.Visible, CustomLineRenderer> customLineRenderers = new Reference2ObjectOpenHashMap<>();
 
@@ -64,14 +57,16 @@ public abstract class ChatHudMixin {
         customLineRenderers.clear();
     }
 
-    @Inject(method = "addVisibleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/hud/ChatHud;isChatFocused()Z"), cancellable = true)
-    private void customLine(ChatHudLine message, CallbackInfo ci, @Local LocalRef<List<OrderedText>> localRef) {
+    @Inject(method = "addVisibleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/hud/ChatHud;isChatFocused()Z"))
+    private void processCustomLines(ChatHudLine message, CallbackInfo ci, @Local LocalRef<List<OrderedText>> localRef, @Share("custom_line_renderers") LocalRef<List<CustomLineRenderer>> renderersRef) {
         if (!BetterHypixelChatMod.isOnHypixel()) return;
-        localRef.set(List.of());
         // split all inner linebreaks and remove chat formattings.
         TextBuilder builder = new TextBuilder();
         message.content().asOrderedText().accept(builder);
         Collection<MutableText> texts = builder.getTexts();
+
+        List<OrderedText> result = new ArrayList<>(texts.size());
+        List<CustomLineRenderer> renderers = new ArrayList<>(texts.size());
 
         TextRenderer textRenderer = client.textRenderer;
         for (MutableText text : texts) {
@@ -79,18 +74,16 @@ public abstract class ChatHudMixin {
             String trimmed = string.trim();
             // check if the text is all -
             if (!trimmed.isEmpty() && trimmed.chars().allMatch(c -> c == '-' || c == '—')) {
-                ChatHudLine.Visible visible = new ChatHudLine.Visible(message.creationTick(), text.asOrderedText(), message.indicator(), true);
-                visibleMessages.addFirst(visible);
-                customLineRenderers.put(visible, new SeparationLine(getFirstColor(text).map(color -> ColorHelper.fullAlpha(color.getRgb())).orElse(-1), 1));
+                result.add(text.asOrderedText());
+                renderers.add(new SeparationLine(getFirstColor(text).map(color -> ColorHelper.fullAlpha(color.getRgb())).orElse(-1), 1));
             } else if (!trimmed.isEmpty() && trimmed.chars().allMatch(c -> c == '▬')) {
-                ChatHudLine.Visible visible = new ChatHudLine.Visible(message.creationTick(), text.asOrderedText(), message.indicator(), true);
-                visibleMessages.addFirst(visible);
-                customLineRenderers.put(visible, new SeparationLine(getFirstColor(text).map(color -> ColorHelper.fullAlpha(color.getRgb())).orElse(-1), 3));
+                result.add(text.asOrderedText());
+                renderers.add(new SeparationLine(getFirstColor(text).map(color -> ColorHelper.fullAlpha(color.getRgb())).orElse(-1), 3));
             } else if (string.startsWith(" ") && !trimmed.isEmpty()) {
                 // find last space in the string
-                int i;
-                for (i = 0; i < string.length(); i++) {
-                    if (string.charAt(i) != ' ') break;
+                int firstNonSpaceChar;
+                for (firstNonSpaceChar = 0; firstNonSpaceChar < string.length(); firstNonSpaceChar++) {
+                    if (string.charAt(firstNonSpaceChar) != ' ') break;
                 }
                 MutableBoolean reachedText = new MutableBoolean(false);
                 MutableText trimmedText = Text.empty(); // still has trailing spaces, shouldn't be an issue?
@@ -105,7 +98,7 @@ public abstract class ChatHudMixin {
                     return Optional.empty();
                 }, Style.EMPTY);
 
-                String s = string.substring(0, i);
+                String s = string.substring(0, firstNonSpaceChar);
                 int leadingSpace = textRenderer.getWidth(withFont(Text.literal(s)));
                 int textWidth = textRenderer.getWidth(withFont(trimmedText));
                 int abs = Math.abs(ChatConstants.DEFAULT_WIDTH / 2 - (leadingSpace + textWidth / 2));
@@ -113,31 +106,40 @@ public abstract class ChatHudMixin {
                 //System.out.println("leadingSpace: " +  leadingSpace + " textWidth: " + textWidth + " abs: " + abs);
                 if (abs < 6) { // if true this text is supposed to be centered!
                     List<OrderedText> list = ChatMessages.breakRenderedChatMessageLines(trimmedText, getScaledWidth(), textRenderer);
-                    for (int j = 0; j < list.size(); j++) {
-                        OrderedText orderedText = list.get(j);
-                        if (isChatFocused() && this.scrolledLines > 0) {
-                            hasUnreadNewMessages = true;
-                            scroll(1);
-                        }
-                        ChatHudLine.Visible visible = new ChatHudLine.Visible(message.creationTick(), orderedText, message.indicator(), j == list.size() - 1);
-                        this.visibleMessages.addFirst(visible);
-                        customLineRenderers.put(visible, new CenteredLine(orderedText));
+                    for (OrderedText orderedText : list) {
+                        result.add(orderedText);
+                        renderers.add(new CenteredLine(orderedText));
                     }
                 } else {
-                    addNormalText(message, textRenderer);
+                    List<OrderedText> orderedTexts = ChatMessages.breakRenderedChatMessageLines(message.content(), getScaledWidth(), textRenderer);
+                    result.addAll(orderedTexts);
+                    for (int i = 0; i < orderedTexts.size(); i++) renderers.add(null);
                 }
 
             } else {
-                addNormalText(message, textRenderer);
+                List<OrderedText> orderedTexts = ChatMessages.breakRenderedChatMessageLines(message.content(), getScaledWidth(), textRenderer);
+                result.addAll(orderedTexts);
+                for (int i = 0; i < orderedTexts.size(); i++) renderers.add(null);
             }
         }
+        if (result.size() != renderers.size()) throw new IllegalStateException("Result and Renderer lists aren't the same size!");
+        localRef.set(result);
+        renderersRef.set(renderers);
+    }
 
-        while (this.visibleMessages.size() > 100) {
-            ChatHudLine.Visible visible = this.visibleMessages.removeLast();
-            customLineRenderers.remove(visible);
+    @Inject(method = "addVisibleMessage", at = @At(value = "INVOKE", target = "Ljava/util/List;add(ILjava/lang/Object;)V", shift = At.Shift.AFTER))
+    private void addCustomLineRenderer(CallbackInfo ci, @Share("custom_line_renderers") LocalRef<List<CustomLineRenderer>> renderersRef, @Local(ordinal = 1) int i) {
+        CustomLineRenderer renderer = renderersRef.get().get(i);
+        if (renderer != null) {
+            customLineRenderers.put(visibleMessages.getFirst(), renderer);
         }
+    }
 
-        ci.cancel();
+    @WrapOperation(method = "addVisibleMessage", at = @At(value = "INVOKE", target = "Ljava/util/List;remove(I)Ljava/lang/Object;"))
+    private <E> E removeCustomLineRenderer(List<E> instance, int i, Operation<E> original) {
+        ChatHudLine.Visible visible = (ChatHudLine.Visible) instance.get(i);
+        customLineRenderers.remove(visible);
+        return original.call(instance, i);
     }
 
     @WrapOperation(method = "getTextStyleAt", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/font/TextHandler;getStyleAt(Lnet/minecraft/text/OrderedText;I)Lnet/minecraft/text/Style;"))
@@ -155,19 +157,6 @@ public abstract class ChatHudMixin {
     @Inject(method = "refresh", at = @At("HEAD"))
     private void clearOnRefresh(CallbackInfo ci) {
         customLineRenderers.clear();
-    }
-
-    @Unique
-    private void addNormalText(ChatHudLine message, TextRenderer textRenderer) {
-        List<OrderedText> list = ChatMessages.breakRenderedChatMessageLines(message.content(), getScaledWidth(), textRenderer);
-        for (int j = 0; j < list.size(); j++) {
-            OrderedText orderedText = list.get(j);
-            if (isChatFocused() && this.scrolledLines > 0) {
-                hasUnreadNewMessages = true;
-                scroll(1);
-            }
-            this.visibleMessages.addFirst(new ChatHudLine.Visible(message.creationTick(), orderedText, message.indicator(), j == list.size() - 1));
-        }
     }
 
     //? if >=1.21.6 {
