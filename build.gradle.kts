@@ -102,8 +102,8 @@ publishMods {
     additionalFiles.from(tasks.remapSourcesJar.get().archiveFile)
     displayName = "${project.property("mod.name")} ${project.property("mod.version")} for ${stonecutter.current.version}"
     version = project.property("mod.version").toString()
-    changelog = rootProject.file("CHANGELOG.md").readText()
-    type = STABLE
+    changelog = rootProject.file("CHANGELOG_MODRINTH.md").readText()
+    type = BETA
     modLoaders.add("fabric")
 
     dryRun = providers.environmentVariable("MODRINTH_TOKEN")
