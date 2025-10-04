@@ -7,6 +7,7 @@ import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import io.github.viciscat.bhc.*;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextHandler;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.ChatHud;
@@ -137,6 +138,13 @@ public abstract class ChatHudMixin {
         }
 
         ci.cancel();
+    }
+
+    @WrapOperation(method = "getTextStyleAt", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/font/TextHandler;getStyleAt(Lnet/minecraft/text/OrderedText;I)Lnet/minecraft/text/Style;"))
+    private Style customLineStyle(TextHandler instance, OrderedText text, int x, Operation<Style> original, @Local ChatHudLine.Visible visible) {
+        CustomLineRenderer renderer = customLineRenderers.get(visible);
+        if (renderer == null) return original.call(instance, text, x);
+        return renderer.getStyleAt(client.textRenderer, 0, x, getScaledWidth());
     }
 
     @Unique
