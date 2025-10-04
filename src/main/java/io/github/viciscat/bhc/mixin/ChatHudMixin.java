@@ -27,7 +27,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 
 @Mixin(ChatHud.class)
 public abstract class ChatHudMixin {
@@ -57,9 +56,9 @@ public abstract class ChatHudMixin {
         customLineRenderers.clear();
     }
 
-    @Inject(method = "addVisibleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/hud/ChatHud;isChatFocused()Z"))
-    private void processCustomLines(ChatHudLine message, CallbackInfo ci, @Local LocalRef<List<OrderedText>> localRef, @Share("custom_line_renderers") LocalRef<List<CustomLineRenderer>> renderersRef) {
-        if (!BetterHypixelChatMod.isOnHypixel()) return;
+    @WrapOperation(method = "addVisibleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/ChatMessages;breakRenderedChatMessageLines(Lnet/minecraft/text/StringVisitable;ILnet/minecraft/client/font/TextRenderer;)Ljava/util/List;"))
+    private List<OrderedText> processCustomLines(StringVisitable stringVisitable, int width, TextRenderer textRenderer, Operation<List<OrderedText>> original, @Share("custom_line_renderers") LocalRef<List<CustomLineRenderer>> renderersRef, @Local(argsOnly = true) ChatHudLine message) {
+        if (!BetterHypixelChatMod.isOnHypixel()) return original.call(stringVisitable, width, textRenderer);
         // split all inner linebreaks and remove chat formattings.
         TextBuilder builder = new TextBuilder();
         message.content().asOrderedText().accept(builder);
@@ -68,15 +67,14 @@ public abstract class ChatHudMixin {
         List<OrderedText> result = new ArrayList<>(texts.size());
         List<CustomLineRenderer> renderers = new ArrayList<>(texts.size());
 
-        TextRenderer textRenderer = client.textRenderer;
         for (MutableText text : texts) {
             String string = text.getString();
             String trimmed = string.trim();
             // check if the text is all -
-            if (!trimmed.isEmpty() && trimmed.chars().allMatch(c -> c == '-' || c == '—')) {
+            if (trimmed.length() > 4 && trimmed.chars().allMatch(c -> c == '-' || c == '—')) {
                 result.add(text.asOrderedText());
                 renderers.add(new SeparationLine(getFirstColor(text).map(color -> ColorHelper.fullAlpha(color.getRgb())).orElse(-1), 1));
-            } else if (!trimmed.isEmpty() && trimmed.chars().allMatch(c -> c == '▬')) {
+            } else if (trimmed.length() > 4 && trimmed.chars().allMatch(c -> c == '▬')) {
                 result.add(text.asOrderedText());
                 renderers.add(new SeparationLine(getFirstColor(text).map(color -> ColorHelper.fullAlpha(color.getRgb())).orElse(-1), 3));
             } else if (string.startsWith(" ") && !trimmed.isEmpty()) {
@@ -111,20 +109,20 @@ public abstract class ChatHudMixin {
                         renderers.add(new CenteredLine(orderedText));
                     }
                 } else {
-                    List<OrderedText> orderedTexts = ChatMessages.breakRenderedChatMessageLines(message.content(), getScaledWidth(), textRenderer);
+                    List<OrderedText> orderedTexts = ChatMessages.breakRenderedChatMessageLines(text, getScaledWidth(), textRenderer);
                     result.addAll(orderedTexts);
                     for (int i = 0; i < orderedTexts.size(); i++) renderers.add(null);
                 }
 
             } else {
-                List<OrderedText> orderedTexts = ChatMessages.breakRenderedChatMessageLines(message.content(), getScaledWidth(), textRenderer);
+                List<OrderedText> orderedTexts = ChatMessages.breakRenderedChatMessageLines(text, getScaledWidth(), textRenderer);
                 result.addAll(orderedTexts);
                 for (int i = 0; i < orderedTexts.size(); i++) renderers.add(null);
             }
         }
         if (result.size() != renderers.size()) throw new IllegalStateException("Result and Renderer lists aren't the same size!");
-        localRef.set(result);
         renderersRef.set(renderers);
+        return result;
     }
 
     @Inject(method = "addVisibleMessage", at = @At(value = "INVOKE", target = "Ljava/util/List;add(ILjava/lang/Object;)V", shift = At.Shift.AFTER))
