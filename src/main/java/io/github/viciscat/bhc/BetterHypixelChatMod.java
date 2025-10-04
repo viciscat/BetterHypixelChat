@@ -1,10 +1,13 @@
 package io.github.viciscat.bhc;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Locale;
 
 public class BetterHypixelChatMod implements ModInitializer {
     // This logger is used to write text to the console and the log file.
@@ -14,6 +17,12 @@ public class BetterHypixelChatMod implements ModInitializer {
     public static final String VERSION = /*$ mod_version*/ "0.1.0";
     public static final String MINECRAFT = /*$ minecraft*/ "1.21.9";
     public static final String NAMESPACE = "better_hypixel_chat";
+
+    private static boolean onHypixel = false;
+
+    public static boolean isOnHypixel() {
+        return onHypixel;
+    }
 
     @Override
     public void onInitialize() {
@@ -33,6 +42,16 @@ public class BetterHypixelChatMod implements ModInitializer {
         //?} else {
         /*net.fabricmc.fabric.api.resource.ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new AddVanillaFont());
         *///?}
+
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            String serverAddress = (client.getCurrentServerEntry() != null) ? client.getCurrentServerEntry().address.toLowerCase(Locale.ENGLISH) : "";
+            String serverBrand = (client.player != null && client.player.networkHandler != null && client.player.networkHandler.getBrand() != null) ? client.player.networkHandler.getBrand() : "";
+
+            onHypixel = serverAddress.contains("hypixel.net") || serverAddress.contains("hypixel.io") || serverBrand.contains("Hypixel BungeeCord");
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, sender) -> {
+            onHypixel = false;
+        });
     }
 
     /**

@@ -65,6 +65,7 @@ public abstract class ChatHudMixin {
 
     @Inject(method = "addVisibleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/hud/ChatHud;isChatFocused()Z"), cancellable = true)
     private void customLine(ChatHudLine message, CallbackInfo ci, @Local LocalRef<List<OrderedText>> localRef) {
+        if (!BetterHypixelChatMod.isOnHypixel()) return;
         localRef.set(List.of());
         List<MutableText> texts;
         // The TextBuilders are there to remove THE DANG FORMATTING CODES WHY DO THEY STILL USE THEM AAAAAAAAAAAAAAAAAAAA
@@ -196,16 +197,16 @@ public abstract class ChatHudMixin {
     //?} else {
     /*@WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTextWithShadow(Lnet/minecraft/client/font/TextRenderer;Lnet/minecraft/text/OrderedText;III)I"))
     *///?}
-    private /*? <=1.21.5 {*/ /*int *//*?} else {*/ void /*?}*/
+    private /*? if <=1.21.5 {*/ /*int *//*?} else {*/ void /*?}*/
     drawCustomRenderers(DrawContext instance, TextRenderer textRenderer, OrderedText orderedText, int x, int y, int color, Operation<Void> original,
-                        /*? <=1.21.5 {*//*@Local(ordinal = 12)*//*?} else {*/@Local(argsOnly = true, ordinal = 4)/*?}*/ int index) {
+                        /*? if <=1.21.5 {*//*@Local(ordinal = 12)*//*?} else {*/@Local(argsOnly = true, ordinal = 4)/*?}*/ int index) {
         index += this.scrolledLines;
         CustomLineRenderer renderer = customLineRenderers.get(visibleMessages.get(index));
         if (renderer == null) original.call(instance, textRenderer, orderedText, x, y, color);
         else {
             renderer.render(textRenderer, instance, orderedText, x, y, color, getScaledWidth());
         }
-        //? <=1.21.5
+        //? if <=1.21.5
         /*return index;*/
     }
 

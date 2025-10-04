@@ -37,7 +37,7 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.1")
 
-    fapi("fabric-lifecycle-events-v1","fabric-message-api-v1")
+    fapi("fabric-lifecycle-events-v1","fabric-networking-api-v1")
     if (stonecutter.eval(stonecutter.current.version, ">=1.21.9")) fapi("fabric-resource-loader-v1")
     else fapi("fabric-resource-loader-v0")
 }
