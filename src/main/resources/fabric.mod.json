@@ -12,7 +12,7 @@
     "sources": "https://github.com/viciscat/BetterHypixelChat"
   },
   "license": "CC0-1.0",
-  "icon": "assets/template/icon.png",
+  "icon": "icon.png",
   "environment": "client",
   "entrypoints": {
     "main": [
