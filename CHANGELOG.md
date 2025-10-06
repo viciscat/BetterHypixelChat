@@ -1,4 +1,8 @@
-# Better Hypixel Chat 0.1.0
+## Better Hypixel Chat 0.1.1
+
+Fixed crash outside of Hypixel
+
+## Better Hypixel Chat 0.1.0
 
 Initial Release.
 

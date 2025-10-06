@@ -127,7 +127,13 @@ public abstract class ChatHudMixin {
 
     @Inject(method = "addVisibleMessage", at = @At(value = "INVOKE", target = "Ljava/util/List;add(ILjava/lang/Object;)V", shift = At.Shift.AFTER))
     private void addCustomLineRenderer(CallbackInfo ci, @Share("custom_line_renderers") LocalRef<List<CustomLineRenderer>> renderersRef, @Local(ordinal = 1) int i) {
-        CustomLineRenderer renderer = renderersRef.get().get(i);
+        if (!BetterHypixelChatMod.isOnHypixel()) return;
+        List<CustomLineRenderer> renderers = renderersRef.get();
+        if (renderers == null || i >= renderers.size()) {
+            BetterHypixelChatMod.LOGGER.warn("Custom line renderer not found or is too small! {}", visibleMessages.getFirst());
+            return;
+        }
+        CustomLineRenderer renderer = renderers.get(i);
         if (renderer != null) {
             customLineRenderers.put(visibleMessages.getFirst(), renderer);
         }

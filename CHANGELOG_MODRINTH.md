@@ -1,9 +1,3 @@
-# Better Hypixel Chat 0.1.0
+# Better Hypixel Chat 0.1.1
 
-Initial Release.
-
-Features:
-- Fix centered text on lower chat widths
-- Smooth line for separations
-
-Released as a beta as there may be mod incompatibilities.
+Fixed crash outside of Hypixel
