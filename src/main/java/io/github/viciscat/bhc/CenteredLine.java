@@ -8,9 +8,9 @@ import net.minecraft.util.math.MathHelper;
 
 public record CenteredLine(OrderedText text) implements CustomLineRenderer {
     @Override
-    public void render(TextRenderer textRenderer, DrawContext context, OrderedText text, int x, int y, int color, int chatWidth) {
+    public void render(TextRenderer textRenderer, DrawContext context, OrderedText text, int x, int y, int textColor, int chatWidth) {
         int center = x + (chatWidth / 2);
-        context.drawCenteredTextWithShadow(textRenderer, this.text, center, y, color);
+        context.drawCenteredTextWithShadow(textRenderer, this.text, center, y, textColor);
     }
 
     @Override

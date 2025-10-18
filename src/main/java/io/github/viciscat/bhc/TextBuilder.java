@@ -6,20 +6,30 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class TextBuilder implements CharacterVisitor {
     private final List<MutableText> texts = new ArrayList<>();
     private Style style = null;
     private final StringBuilder stringBuilder = new StringBuilder();
+    private final int start;
+    private final int end;
+    private int i = -1;
+
+    public TextBuilder(int start, int end) {
+        this.start = start;
+        this.end = end;
+        texts.add(Text.empty());
+    }
 
     public TextBuilder() {
-        texts.add(Text.empty());
+        this(0, Integer.MAX_VALUE);
     }
 
     @Override
     public boolean accept(int index, Style style, int codePoint) {
+        i++;
+        if (i < start || i > end) return true;
         if (this.style == null) this.style = style;
 
         if (!this.style.equals(style)) {
@@ -41,7 +51,7 @@ public class TextBuilder implements CharacterVisitor {
         return true;
     }
 
-    public Collection<MutableText> getTexts() {
+    public List<MutableText> getTexts() {
         if (!stringBuilder.isEmpty()) {
             texts.getLast().append(Text.literal(stringBuilder.toString()).setStyle(this.style));
         }

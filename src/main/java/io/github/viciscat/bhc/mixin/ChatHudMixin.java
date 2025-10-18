@@ -77,6 +77,25 @@ public abstract class ChatHudMixin {
             } else if (trimmed.length() > 4 && trimmed.chars().allMatch(c -> c == '▬')) {
                 result.add(text.asOrderedText());
                 renderers.add(new SeparationLine(getFirstColor(text).map(color -> ColorHelper.fullAlpha(color.getRgb())).orElse(-1), 3));
+            } else if (trimmed.startsWith("-") && trimmed.endsWith("-") && textRenderer.getWidth(withFont(text)) > ChatConstants.DEFAULT_WIDTH - 10) {
+                int start;
+                for (start = 0; start < string.length(); start++) {
+                    if (string.charAt(start) != '-') break;
+                }
+                int end;
+                for (end = string.length() - 1; end >= 0; end--) {
+                    if (string.charAt(end) != '-') break;
+                }
+
+                TextBuilder textBuilder = new TextBuilder(start, end);
+                text.asOrderedText().accept(textBuilder);
+
+                List<OrderedText> list = ChatMessages.breakRenderedChatMessageLines(textBuilder.getTexts().getFirst(), getScaledWidth(), textRenderer);
+                for (int i = 0; i < list.size(); i++) {
+                    OrderedText orderedText = list.get(i);
+                    result.add(orderedText);
+                    renderers.add(i == 0 ? new CenteredSeparationLine(orderedText, getFirstColor(text).map(color -> ColorHelper.fullAlpha(color.getRgb())).orElse(-1)) : new CenteredLine(orderedText));
+                }
             } else if (string.startsWith(" ") && !trimmed.isEmpty()) {
                 // find last space in the string
                 int firstNonSpaceChar;
