@@ -36,9 +36,6 @@ public abstract class ChatHudMixin {
     private List<ChatHudLine.Visible> visibleMessages;
 
     @Shadow
-    private int scrolledLines;
-
-    @Shadow
     public abstract int getWidth();
 
     @Shadow
@@ -189,15 +186,14 @@ public abstract class ChatHudMixin {
     *///?}
     private /*? if <=1.21.5 {*/ /*int *//*?} else {*/ void /*?}*/
     drawCustomRenderers(DrawContext instance, TextRenderer textRenderer, OrderedText orderedText, int x, int y, int color, Operation<Void> original,
-                        /*? if <=1.21.5 {*//*@Local(ordinal = 12)*//*?} else {*/@Local(argsOnly = true, ordinal = 4)/*?}*/ int index) {
-        index += this.scrolledLines;
-        CustomLineRenderer renderer = customLineRenderers.get(visibleMessages.get(index));
+                        @Local/*? if >=1.21.6 {*/(argsOnly=true)/*?}*/ ChatHudLine.Visible visible) {
+        CustomLineRenderer renderer = customLineRenderers.get(visible);
         if (renderer == null) original.call(instance, textRenderer, orderedText, x, y, color);
         else {
             renderer.render(textRenderer, instance, orderedText, x, y, color, getScaledWidth());
         }
         //? if <=1.21.5
-        /*return index;*/
+        /*return 0;*/
     }
 
     @Unique

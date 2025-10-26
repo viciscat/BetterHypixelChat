@@ -2,6 +2,8 @@ package io.github.viciscat.bhc;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
@@ -14,8 +16,8 @@ public class BetterHypixelChatMod implements ModInitializer {
     // It is considered best practice to use your mod id as the logger's name.
     // That way, it's clear which mod wrote info, warnings, and errors.
     public static final Logger LOGGER = LoggerFactory.getLogger("BetterHypixelChat");
-    public static final String VERSION = /*$ mod_version*/ "0.1.0";
-    public static final String MINECRAFT = /*$ minecraft*/ "1.21.9";
+    public static final String VERSION = /*$ mod_version*/ "0.2.1";
+    public static final String MINECRAFT = /*$ minecraft*/ "1.21.10";
     public static final String NAMESPACE = "better_hypixel_chat";
 
     private static boolean onHypixel = false;
@@ -49,9 +51,15 @@ public class BetterHypixelChatMod implements ModInitializer {
 
             onHypixel = serverAddress.contains("hypixel.net") || serverAddress.contains("hypixel.io") || serverBrand.contains("Hypixel BungeeCord");
         });
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, sender) -> {
-            onHypixel = false;
-        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, sender) -> onHypixel = false);
+        // fix for chat patches' ChatLog.hideRecentMessages changing visibleMessages and breaking the reference map.
+        if (FabricLoader.getInstance().isModLoaded("chatpatches")) {
+            Identifier identifier = id("chatpatches_compat");
+            ClientPlayConnectionEvents.JOIN.register(identifier, (handler, sender, client) -> {
+                if (isOnHypixel()) client.inGameHud.getChatHud().reset();
+            });
+            ClientPlayConnectionEvents.JOIN.addPhaseOrdering(Event.DEFAULT_PHASE, identifier); // run after chat patches
+        }
     }
 
     /**
