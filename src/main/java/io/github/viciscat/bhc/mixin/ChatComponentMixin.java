@@ -47,7 +47,7 @@ public abstract class ChatComponentMixin implements ChatComponentAccess {
     @Shadow
     abstract double getScale();
 
-    //? if <1.21.11
+    //? if <1.21.11 {
     /*@Shadow
     @Final
     Minecraft minecraft;*/
