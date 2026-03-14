@@ -1,15 +1,15 @@
 package io.github.viciscat.bhc;
 
-import net.minecraft.text.CharacterVisitor;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
+import net.minecraft.util.FormattedCharSink;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TextBuilder implements CharacterVisitor {
-    private final List<MutableText> texts = new ArrayList<>();
+public class TextBuilder implements FormattedCharSink {
+    private final List<MutableComponent> texts = new ArrayList<>();
     private Style style = null;
     private final StringBuilder stringBuilder = new StringBuilder();
     private final int start;
@@ -19,7 +19,7 @@ public class TextBuilder implements CharacterVisitor {
     public TextBuilder(int start, int end) {
         this.start = start;
         this.end = end;
-        texts.add(Text.empty());
+        texts.add(Component.empty());
     }
 
     public TextBuilder() {
@@ -34,26 +34,26 @@ public class TextBuilder implements CharacterVisitor {
 
         if (!this.style.equals(style)) {
             if (!stringBuilder.isEmpty()) {
-                texts.getLast().append(Text.literal(stringBuilder.toString()).setStyle(this.style));
+                texts.getLast().append(Component.literal(stringBuilder.toString()).setStyle(this.style));
                 stringBuilder.setLength(0);
             }
             this.style = style;
         }
         if (codePoint == '\n') {
             if (!stringBuilder.isEmpty()) {
-                texts.getLast().append(Text.literal(stringBuilder.toString()).setStyle(this.style));
+                texts.getLast().append(Component.literal(stringBuilder.toString()).setStyle(this.style));
                 stringBuilder.setLength(0);
             }
-            texts.add(Text.empty());
+            texts.add(Component.empty());
             return true;
         }
         stringBuilder.append(Character.toChars(codePoint));
         return true;
     }
 
-    public List<MutableText> getTexts() {
+    public List<MutableComponent> getTexts() {
         if (!stringBuilder.isEmpty()) {
-            texts.getLast().append(Text.literal(stringBuilder.toString()).setStyle(this.style));
+            texts.getLast().append(Component.literal(stringBuilder.toString()).setStyle(this.style));
         }
         return texts;
     }

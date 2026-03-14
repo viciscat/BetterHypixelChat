@@ -1,3 +1,9 @@
+## 0.3.0
+
+- 1.21.11
+- Refactor a bunch of code
+- Handle page buttons in friends list goodly
+
 ## 0.2.1
 
 - Fix some issues with smooth scroll and chat patches.

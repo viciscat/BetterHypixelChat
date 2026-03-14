@@ -1,12 +1,12 @@
 package io.github.viciscat.bhc.mixin;
 
-import net.minecraft.client.font.Font;
-import net.minecraft.client.font.FontFilterType;
-import net.minecraft.client.font.FontManager;
-import net.minecraft.client.font.FontStorage;
-import net.minecraft.client.option.GameOptions;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
+import com.mojang.blaze3d.font.GlyphProvider;
+import net.minecraft.client.gui.font.FontOption;
+import net.minecraft.client.gui.font.FontManager;
+import net.minecraft.client.gui.font.FontSet;
+import net.minecraft.client.Options;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -20,17 +20,17 @@ import java.util.concurrent.Executor;
 @Mixin(FontManager.class)
 public interface FontManagerAccessor {
 
-    @Invoker("loadIndex")
-    CompletableFuture<FontManager.ProviderIndex> invokeLoadIndex(ResourceManager resourceManager, Executor executor);
+    @Invoker("prepare")
+    CompletableFuture<FontManager.Preparation> invokePrepare(ResourceManager resourceManager, Executor executor);
 
-    @Accessor("fontStorages")
-    Map<Identifier, FontStorage> getFontStorages();
+    @Accessor("fontSets")
+    Map<Identifier, FontSet> getFontSets();
 
-    @Accessor("fonts")
-    List<Font> getFonts();
+    @Accessor("providersToClose")
+    List<GlyphProvider> getProvidersToClose();
 
-    @Invoker("getActiveFilters")
-    static Set<FontFilterType> invokeGetActiveFilters(GameOptions options) {
+    @Invoker("getFontOptions")
+    static Set<FontOption> invokeGetFontOptions(Options options) {
         throw new UnsupportedOperationException();
     }
 }

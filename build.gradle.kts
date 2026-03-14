@@ -33,9 +33,9 @@ dependencies {
     }
 
     minecraft("com.mojang:minecraft:${stonecutter.current.version}")
-    mappings("net.fabricmc:yarn:${property("deps.yarn")}:v2")
+    mappings(loom.officialMojangMappings())
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
-    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.1")
+    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
 
     fapi("fabric-lifecycle-events-v1","fabric-networking-api-v1")
     if (stonecutter.eval(stonecutter.current.version, ">=1.21.9")) fapi("fabric-resource-loader-v1")
@@ -93,6 +93,15 @@ tasks {
         from(remapJar.map { it.archiveFile }, remapSourcesJar.map { it.archiveFile })
         into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
         dependsOn("build")
+    }
+}
+
+stonecutter {
+    replacements {
+        string {
+            direction = eval(current.version, ">=1.21.11")
+            replace("ResourceLocation", "Identifier")
+        }
     }
 }
 

@@ -1,13 +1,15 @@
 package io.github.viciscat.bhc;
 
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Style;
+import net.minecraft.client.gui.Font;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.Style;
+import org.jetbrains.annotations.Nullable;
 
 public interface CustomLineRenderer {
 
-    void render(TextRenderer textRenderer, DrawContext context, OrderedText text, int x, int y, int textColor, int chatWidth);
+    void render(ChatGraphics graphics, FormattedCharSequence text, int lineX, int lineY, int lineWidth, int lineHeight, int textY, float textAlpha);
 
-    Style getStyleAt(TextRenderer textRenderer, int x, int mouseX, int chatWidth);
+    default @Nullable Style getStyleAt(Font textRenderer, int lineX, int mouseX, int lineWidth) {
+        return null;
+    }
 }

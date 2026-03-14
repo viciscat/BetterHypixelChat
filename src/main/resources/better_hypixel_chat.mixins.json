@@ -6,8 +6,15 @@
     "defaultRequire": 1
   },
   "client": [
-    "ChatHudMixin",
+    "ChatComponentMixin",
     "FontManagerAccessor",
-    "MinecraftClientAccessor"
+    "MinecraftAccessor",
+    "chatgraphics.BackgroundMixin",
+    "chatgraphics.ChatGraphicsAccessMixin",
+    "chatgraphics.ClickableMixin",
+    "chatgraphics.FocusedMixin"
+  ],
+  "mixins": [
+    "ChatComponentMixin$Renderer"
   ]
 }

@@ -1,12 +1,12 @@
 package io.github.viciscat.bhc.mixin;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.FontManager;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.font.FontManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(MinecraftClient.class)
-public interface MinecraftClientAccessor {
+@Mixin(Minecraft.class)
+public interface MinecraftAccessor {
 
     @Accessor("fontManager")
     FontManager getFontManager();
