@@ -1,10 +1,8 @@
 plugins {
     id("dev.kikugie.stonecutter")
-    id("fabric-loom") version "1.15-SNAPSHOT" apply false
-    id("me.modmuss50.mod-publish-plugin") version "1.0.0" apply false // Publishes builds to hosting websites
 }
 
-stonecutter active "1.21.11"
+stonecutter active "26.1"
 
 // Make newer versions be published last
 stonecutter tasks {
@@ -14,8 +12,26 @@ stonecutter tasks {
 
 // See https://stonecutter.kikugie.dev/wiki/config/params
 stonecutter parameters {
-    swaps["mod_version"] = "\"" + property("mod.version") + "\";"
-    swaps["minecraft"] = "\"" + node.metadata.version + "\";"
+    swaps["mod_version"] = "\"${property("mod.version")}\";"
+    swaps["minecraft"] = "\"${node.metadata.version}\";"
     constants["release"] = property("mod.id") != "template"
     dependencies["fapi"] = node.project.property("deps.fabric_api") as String
+
+    replacements {
+        string(current.parsed >= "1.21.11") {
+            replace("ResourceLocation", "Identifier")
+        }
+
+        string(current.parsed >= "26.1") {
+            replace("classTweaker v1 named", "classTweaker v1 official")
+        }
+
+        string(current.parsed >= "26.1") {
+            replace("import net.minecraft.client.GuiMessage;", "import net.minecraft.client.multiplayer.chat.GuiMessage;")
+        }
+
+        string(current.parsed >= "26.1") {
+            replace("GuiGraphics", "GuiGraphicsExtractor")
+        }
+    }
 }

@@ -1,7 +1,7 @@
 package io.github.viciscat.bhc;
 
-import net.minecraft.client.GuiMessage;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.client.multiplayer.chat.GuiMessage;
+import org.jspecify.annotations.Nullable;
 
 public interface ChatComponentAccess {
 

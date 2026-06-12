@@ -1,0 +1,20 @@
+# See https://stonecutter.kikugie.dev/wiki/config/properties#centralized-properties
+mod.id = "better_hypixel_chat"
+mod.name = "Better Hypixel Chat"
+mod.group = "io.github.viciscat.bhc"
+mod.version = "0.3.1"
+
+deps.fabric_loader = "0.19.2"
+loomx.loom_version = "1.16-SNAPSHOT"
+
+["1.21.11"]
+mod.mc_compat = "1.21.11"
+mod.mc_releases = ["1.21.11"]
+
+deps.fabric_api = "0.141.4+1.21.11"
+
+["26.1"]
+mod.mc_compat = "~26.1"
+mod.mc_releases = ["26.1", "26.1.1", "26.1.2"]
+
+deps.fabric_api = "0.151.0+26.1.2"

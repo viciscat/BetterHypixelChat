@@ -4,13 +4,14 @@ import net.minecraft.util.FormattedCharSink;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TextBuilder implements FormattedCharSink {
     private final List<MutableComponent> texts = new ArrayList<>();
-    private Style style = null;
+    private @Nullable Style style = null;
     private final StringBuilder stringBuilder = new StringBuilder();
     private final int start;
     private final int end;
@@ -52,7 +53,7 @@ public class TextBuilder implements FormattedCharSink {
     }
 
     public List<MutableComponent> getTexts() {
-        if (!stringBuilder.isEmpty()) {
+        if (!stringBuilder.isEmpty() && style != null) {
             texts.getLast().append(Component.literal(stringBuilder.toString()).setStyle(this.style));
         }
         return texts;

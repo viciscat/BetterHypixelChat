@@ -7,10 +7,8 @@ import net.minecraft.client.gui.components.ComponentRenderUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.locale.Language;
-//? if <1.21.11
-//import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,26 +33,6 @@ public record CenteredLine(FormattedCharSequence text, @Nullable SideDecorations
             graphics.drawString(sideDecorations.right, lineX + (lineWidth + sideDecorations.centerWidth) / 2 + SPACING, decorationY, textAlpha);
         }
     }
-
-    //? if <1.21.11 {
-    /*@Override
-    public Style getStyleAt(Font textRenderer, int lineX, int mouseX, int lineWidth) {
-        if (sideDecorations != null) {
-            int leftX = lineX + (lineWidth - sideDecorations.centerWidth) / 2 - textRenderer.width(sideDecorations.left) - SPACING;
-            int rightX = lineX + (lineWidth + sideDecorations.centerWidth) / 2 + SPACING;
-            if (mouseX >= leftX) {
-                Style style = textRenderer.getSplitter().componentStyleAtWidth(sideDecorations.left, mouseX - leftX);
-                if (style != null) return style;
-            }
-            if (mouseX >= rightX) {
-                Style style = textRenderer.getSplitter().componentStyleAtWidth(sideDecorations.right, mouseX - rightX);
-                if (style != null) return style;
-            }
-        }
-        double textX = lineX + (lineWidth - textRenderer.width(text)) / 2.0;
-        return mouseX < textX ? null : textRenderer.getSplitter().componentStyleAtWidth(text, net.minecraft.util.Mth.floor(mouseX - textX));
-    }
-    *///? }
 
     public record SideDecorations(FormattedCharSequence left, FormattedCharSequence right, int centerWidth, Layer layer) {
         public enum Layer {

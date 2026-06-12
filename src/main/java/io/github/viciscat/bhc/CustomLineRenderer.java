@@ -3,7 +3,7 @@ package io.github.viciscat.bhc;
 import net.minecraft.client.gui.Font;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.network.chat.Style;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public interface CustomLineRenderer {
 

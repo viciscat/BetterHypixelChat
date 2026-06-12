@@ -12,7 +12,6 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.VanillaPackResources;
 import net.minecraft.server.packs.resources.FallbackResourceManager;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -23,7 +22,7 @@ public class AddVanillaFont implements PreparableReloadListener {
     public static final Identifier ID = BetterHypixelChatMod.id("vanilla_font");
 
     @Override
-    public @NotNull CompletableFuture<Void> reload(@NotNull SharedState store, @NotNull Executor prepareExecutor, PreparationBarrier synchronizer, @NotNull Executor applyExecutor) {
+    public CompletableFuture<Void> reload(SharedState store, Executor prepareExecutor, PreparationBarrier synchronizer, Executor applyExecutor) {
         return CompletableFuture.supplyAsync(this::loadVanillaIndex, prepareExecutor)
                 .thenCompose(synchronizer::wait)
                 .thenAcceptAsync(index -> {

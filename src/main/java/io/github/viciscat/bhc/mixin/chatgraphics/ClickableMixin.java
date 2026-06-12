@@ -4,7 +4,6 @@ import io.github.viciscat.bhc.GuiGraphicsSupplier;
 import org.spongepowered.asm.mixin.Mixin;
 
 
-//? if >=1.21.11 {
 import net.minecraft.client.gui.ActiveTextCollector;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,8 +21,3 @@ public abstract class ClickableMixin implements GuiGraphicsSupplier {
         output.defaultParameters(operator.apply(output.defaultParameters()));
     }
 }
-//? } else {
-/*@Mixin(net.minecraft.client.Minecraft.class)
-public class ClickableMixin {}
-
-*///? }

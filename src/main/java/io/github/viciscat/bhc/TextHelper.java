@@ -8,7 +8,7 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.FormattedCharSink;
 import net.minecraft.util.Unit;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -61,6 +61,7 @@ public final class TextHelper {
         return visitor -> text.accept((index, style, codePoint) -> visitor.accept(index, style.applyTo(override), codePoint));
     }
 
+    @SuppressWarnings("NullableProblems")
     public static Optional<TextColor> getFirstColor(FormattedCharSequence text) {
         ColorGetterVisitor visitor = new ColorGetterVisitor();
         text.accept(visitor);
@@ -72,7 +73,7 @@ public final class TextHelper {
     }
 
     private static class ColorGetterVisitor implements FormattedCharSink {
-        private TextColor color = null;
+        private @Nullable TextColor color = null;
 
         @Override
         public boolean accept(int index, Style style, int codePoint) {
@@ -96,7 +97,7 @@ public final class TextHelper {
         }
 
         @Override
-        public boolean accept(int index, @NotNull Style style, int codePoint) {
+        public boolean accept(int index, Style style, int codePoint) {
             i++;
             if (i < start) return true;
             if (i > end) return false;
@@ -120,7 +121,7 @@ public final class TextHelper {
         }
 
         @Override
-        public @NotNull Optional<Unit> accept(@NotNull Style style, String asString) {
+        public Optional<Unit> accept(Style style, String asString) {
             if (asString.length() <= start) {
                 start -= asString.length();
                 return Optional.empty();

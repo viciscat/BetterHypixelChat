@@ -7,25 +7,22 @@ import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.resources.Identifier;
-//? if >=1.21.11 {
 import net.minecraft.util.Util;
-//?} else {
-/*import net.minecraft.Util;
-*///?}
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.Optional;
 
 public class BetterHypixelChatMod implements ModInitializer {
     // This logger is used to write text to the console and the log file.
     // It is considered best practice to use your mod id as the logger's name.
     // That way, it's clear which mod wrote info, warnings, and errors.
     public static final Logger LOGGER = LoggerFactory.getLogger("BetterHypixelChat");
-    public static final String VERSION = /*$ mod_version*/ "0.3.0";
-    public static final String MINECRAFT = /*$ minecraft*/ "1.21.11";
+    public static final String VERSION = /*$ mod_version*/ "0.4.0";
+    public static final String MINECRAFT = /*$ minecraft*/ "26.1.2";
     public static final String NAMESPACE = "better_hypixel_chat";
 
     public static final Collection<LineRendererProvider> PROVIDERS = Util.make(new ArrayList<>(), list -> {
@@ -48,16 +45,24 @@ public class BetterHypixelChatMod implements ModInitializer {
 
         LOGGER.info("Hello Fabric world!");
         ResourceLoader.get(PackType.CLIENT_RESOURCES)
-                .registerReloader(AddVanillaFont.ID, new AddVanillaFont());
+                //? if >=26.1 {
+                .registerReloadListener(AddVanillaFont.ID, new AddVanillaFont());
+                //?} else {
+                /*.registerReloader(AddVanillaFont.ID, new AddVanillaFont());*/
+                //?}
         ResourceLoader.get(PackType.CLIENT_RESOURCES)
-                .addReloaderOrdering(
+                //? if >=26.1 {
+                .addListenerOrdering(
+                //?} else {
+                /*.addReloaderOrdering(*/
+                //?}
                         net.fabricmc.fabric.api.resource.v1.reloader.ResourceReloaderKeys.Client.FONTS,
                         AddVanillaFont.ID
                 );
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             String serverAddress = (client.getCurrentServer() != null) ? client.getCurrentServer().ip.toLowerCase(Locale.ENGLISH) : "";
-            String serverBrand = (client.player != null && client.player.connection != null && client.player.connection.serverBrand() != null) ? client.player.connection.serverBrand() : "";
+            String serverBrand = Optional.ofNullable(client.player).map(p -> p.connection.serverBrand()).orElse("");
 
             onHypixel = serverAddress.contains("hypixel.net") || serverAddress.contains("hypixel.io") || serverBrand.contains("Hypixel BungeeCord");
         });

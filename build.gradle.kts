@@ -1,11 +1,24 @@
 plugins {
-    `maven-publish`
-    id("fabric-loom")
-    id("me.modmuss50.mod-publish-plugin")
+    // This plugin applies the correct loom variant based on the Minecraft version
+    id("dev.kikugie.loom-back-compat")
+    id("me.modmuss50.mod-publish-plugin") version "2.0.0"
 }
 
-version = "${property("mod.version")}+${stonecutter.current.version}"
+// DO NOT set group = ...!
+version = "${property("mod.version")}+${sc.current.version}"
 base.archivesName = property("mod.id") as String
+
+val requiredJava: JavaVersion = when {
+    sc.current.parsed >= "26.1" -> JavaVersion.VERSION_25
+    sc.current.parsed >= "1.20.5" -> JavaVersion.VERSION_21
+    sc.current.parsed >= "1.18" -> JavaVersion.VERSION_17
+    sc.current.parsed >= "1.17" -> JavaVersion.VERSION_16
+    else -> JavaVersion.VERSION_1_8
+}
+
+// This can be used for publishing on Modrinth and Curseforge
+val compatibleVersions: List<String> = sc.properties.rawOrNull("mod", "mc_releases")
+    ?.asList().orEmpty().map { it.toString() }
 
 repositories {
     /**
@@ -29,86 +42,76 @@ dependencies {
      * @see <a href="https://github.com/FabricMC/fabric">List of Fabric API modules</a>
      */
     fun fapi(vararg modules: String) {
-        for (it in modules) modImplementation(fabricApi.module(it, property("deps.fabric_api") as String))
+        for (it in modules) modImplementation(fabricApi.module(it, sc.properties["deps.fabric_api"]))
     }
 
-    minecraft("com.mojang:minecraft:${stonecutter.current.version}")
-    mappings(loom.officialMojangMappings())
+    minecraft("com.mojang:minecraft:${sc.current.version}")
+    // Applies Mojang Mappings on obfuscated versions
+    loomx.applyMojangMappings()
+
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
 
-    fapi("fabric-lifecycle-events-v1","fabric-networking-api-v1")
-    if (stonecutter.eval(stonecutter.current.version, ">=1.21.9")) fapi("fabric-resource-loader-v1")
-    else fapi("fabric-resource-loader-v0")
+    fapi("fabric-lifecycle-events-v1","fabric-networking-api-v1", "fabric-resource-loader-v1")
 }
 
 loom {
+    fabricModJsonPath = rootProject.file("src/main/resources/fabric.mod.json") // Useful for interface injection
+    accessWidenerPath = sc.process(
+        rootProject.file("src/main/resources/better_hypixel_chat.ct"),
+        "build/processed.ct"
+    )
+
     decompilerOptions.named("vineflower") {
         options.put("mark-corresponding-synthetics", "1") // Adds names to lambdas - useful for mixins
     }
 
     runConfigs.all {
-        ideConfigGenerated(true)
         vmArgs("-Dmixin.debug.export=true") // Exports transformed classes for debugging
         runDir = "../../run" // Shares the run directory between versions
     }
-    accessWidenerPath = parent?.file("src/main/resources/better_hypixel_chat.accesswidener")
-
-    mixin {
-        useLegacyMixinAp.set(false)
-    }
-
 }
 
 java {
     withSourcesJar()
-    val requiresJava21: Boolean = stonecutter.eval(stonecutter.current.version, ">=1.20.6")
-    val javaVersion: JavaVersion =
-        if (requiresJava21) JavaVersion.VERSION_21
-        else JavaVersion.VERSION_17
-    targetCompatibility = javaVersion
-    sourceCompatibility = javaVersion
+    targetCompatibility = requiredJava
+    sourceCompatibility = requiredJava
 }
 
 tasks {
     processResources {
-        inputs.property("id", project.property("mod.id"))
-        inputs.property("name", project.property("mod.name"))
-        inputs.property("version", project.property("mod.version"))
-        inputs.property("minecraft", project.property("mod.mc_dep"))
+        fun MutableMap<String, String>.register(key: String, property: String) {
+            val value: String = sc.properties[property]
+            inputs.property(key, value)
+            set(key, value)
+        }
 
-        val props = mapOf(
-            "id" to project.property("mod.id"),
-            "name" to project.property("mod.name"),
-            "version" to project.property("mod.version"),
-            "minecraft" to project.property("mod.mc_dep")
-        )
+        val props = buildMap {
+            register("id", "mod.id")
+            register("name", "mod.name")
+            register("version", "mod.version")
+            register("minecraft", "mod.mc_compat")
+        }
 
         filesMatching("fabric.mod.json") { expand(props) }
+
+        val mixinJava = "JAVA_${requiredJava.majorVersion}"
+        filesMatching("*.mixins.json") { expand("java" to mixinJava) }
     }
 
     // Builds the version into a shared folder in `build/libs/${mod version}/`
     register<Copy>("buildAndCollect") {
         group = "build"
-        from(remapJar.map { it.archiveFile }, remapSourcesJar.map { it.archiveFile })
+
+        // loomx.mod(Sources)Jar returns the jar task for the applied loom variant
+        from(loomx.modJar.map { it.archiveFile }, loomx.modSourcesJar.map { it.archiveFile })
         into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
         dependsOn("build")
     }
 }
-
-stonecutter {
-    replacements {
-        string {
-            direction = eval(current.version, ">=1.21.11")
-            replace("ResourceLocation", "Identifier")
-        }
-    }
-}
-
-
 publishMods {
-    file = tasks.remapJar.get().archiveFile
-    additionalFiles.from(tasks.remapSourcesJar.get().archiveFile)
+    file = loomx.modJar.get().archiveFile
+    additionalFiles.from(loomx.modSourcesJar.get().archiveFile)
     displayName = "${project.property("mod.name")} ${project.property("mod.version")} for ${stonecutter.current.version}"
     version = project.property("mod.version").toString()
     changelog = rootProject.file("CHANGELOG_MODRINTH.md").readText()
@@ -121,7 +124,7 @@ publishMods {
     modrinth {
         projectId = property("publish.modrinth").toString()
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
-        minecraftVersions.addAll(project.property("mod.mc_targets").toString().split(" "))
+        minecraftVersions.addAll(compatibleVersions)
         requires {
             slug = "fabric-api"
         }
@@ -136,27 +139,3 @@ publishMods {
         }
     }*/
 }
-
-/*
-publishing {
-    repositories {
-        maven("...") {
-            name = "..."
-            credentials(PasswordCredentials::class.java)
-            authentication {
-                create<BasicAuthentication>("basic")
-            }
-        }
-    }
-
-    publications {
-        create<MavenPublication>("mavenJava") {
-            groupId = "${property("mod.group")}.${mod.id}"
-            artifactId = mod.version
-            version = mcVersion
-
-            from(components["java"])
-        }
-    }
-}
-*/

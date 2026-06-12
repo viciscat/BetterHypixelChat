@@ -4,11 +4,9 @@ import io.github.viciscat.bhc.GuiGraphicsSupplier;
 import org.spongepowered.asm.mixin.Mixin;
 
 
-//? if >=1.21.11 {
-
 import net.minecraft.client.gui.ActiveTextCollector;
-import net.minecraft.client.gui.GuiGraphics;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Shadow;
 
@@ -18,13 +16,13 @@ public abstract class BackgroundMixin implements GuiGraphicsSupplier {
 
     @Shadow
     @Final
-    private GuiGraphics graphics;
+    private GuiGraphicsExtractor graphics;
 
     @Shadow
     private ActiveTextCollector.Parameters parameters;
 
     @Override
-    public @Nullable GuiGraphics bhc$getGuiGraphics() {
+    public @Nullable GuiGraphicsExtractor bhc$getGuiGraphics() {
         return graphics;
     }
 
@@ -33,8 +31,3 @@ public abstract class BackgroundMixin implements GuiGraphicsSupplier {
         parameters = operator.apply(this.parameters);
     }
 }
-//? } else {
-/*@Mixin(net.minecraft.client.Minecraft.class)
-public class BackgroundMixin {}
-
-*///? }

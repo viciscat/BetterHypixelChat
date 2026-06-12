@@ -34,14 +34,6 @@ public record CenteredSeparationLine(FormattedCharSequence text, int lineColor, 
         graphics.fill(end + 1, sepY, lineX + lineWidth - 1, sepY + THICKNESS, color1);
     }
 
-    //? if <1.21.11 {
-    /*@Override
-    public net.minecraft.network.chat.Style getStyleAt(Font textRenderer, int x, int mouseX, int chatWidth) {
-        double offset = x + (chatWidth - textRenderer.width(this.text)) / 2.0;
-        return mouseX < offset ? null : textRenderer.getSplitter().componentStyleAtWidth(this.text, net.minecraft.util.Mth.floor(mouseX - offset));
-    }
-    *///? }
-
     public enum Layer {
         TOP,
         CENTER,

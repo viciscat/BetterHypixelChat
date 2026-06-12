@@ -26,5 +26,5 @@
     "fabricloader": ">=0.16",
     "minecraft": "${minecraft}"
   },
-  "accessWidener": "better_hypixel_chat.accesswidener"
+  "accessWidener": "better_hypixel_chat.ct"
 }
