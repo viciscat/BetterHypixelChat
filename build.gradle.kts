@@ -115,7 +115,7 @@ publishMods {
     displayName = "${project.property("mod.name")} ${project.property("mod.version")} for ${stonecutter.current.version}"
     version = project.property("mod.version").toString()
     changelog = rootProject.file("CHANGELOG_MODRINTH.md").readText()
-    type = BETA
+    type = STABLE
     modLoaders.add("fabric")
 
     dryRun = providers.environmentVariable("MODRINTH_TOKEN")
