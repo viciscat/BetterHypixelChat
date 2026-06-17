@@ -2,7 +2,7 @@ plugins {
     id("dev.kikugie.stonecutter")
 }
 
-stonecutter active "26.1"
+stonecutter active "26.2"
 
 // Make newer versions be published last
 stonecutter tasks {
@@ -30,8 +30,8 @@ stonecutter parameters {
             replace("import net.minecraft.client.GuiMessage;", "import net.minecraft.client.multiplayer.chat.GuiMessage;")
         }
 
-        string(current.parsed >= "26.1") {
-            replace("GuiGraphics", "GuiGraphicsExtractor")
+        regex(current.parsed >= "26.1") {
+            replace("\\bGuiGraphics\\b", "GuiGraphicsExtractor", "GuiGraphicsExtractor", "GuiGraphics")
         }
     }
 }

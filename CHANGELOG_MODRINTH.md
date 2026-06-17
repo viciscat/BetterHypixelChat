@@ -1,4 +1,3 @@
-# Better Hypixel Chat 0.3.1
+# Better Hypixel Chat 0.3.2
 
-- 26.1.2
-- Mark release as stable
+- 26.2

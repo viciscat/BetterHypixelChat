@@ -2,7 +2,7 @@
 mod.id = "better_hypixel_chat"
 mod.name = "Better Hypixel Chat"
 mod.group = "io.github.viciscat.bhc"
-mod.version = "0.3.1"
+mod.version = "0.3.2"
 
 deps.fabric_loader = "0.19.2"
 loomx.loom_version = "1.16-SNAPSHOT"
@@ -18,3 +18,9 @@ mod.mc_compat = "~26.1"
 mod.mc_releases = ["26.1", "26.1.1", "26.1.2"]
 
 deps.fabric_api = "0.151.0+26.1.2"
+
+["26.2"]
+mod.mc_compat = "~26.2"
+mod.mc_releases = ["26.2"]
+
+deps.fabric_api = "0.152.1+26.2"

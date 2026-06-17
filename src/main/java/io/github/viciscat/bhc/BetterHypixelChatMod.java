@@ -21,8 +21,8 @@ public class BetterHypixelChatMod implements ModInitializer {
     // It is considered best practice to use your mod id as the logger's name.
     // That way, it's clear which mod wrote info, warnings, and errors.
     public static final Logger LOGGER = LoggerFactory.getLogger("BetterHypixelChat");
-    public static final String VERSION = /*$ mod_version*/ "0.4.0";
-    public static final String MINECRAFT = /*$ minecraft*/ "26.1.2";
+    public static final String VERSION = /*$ mod_version*/ "0.3.1";
+    public static final String MINECRAFT = /*$ minecraft*/ "26.2";
     public static final String NAMESPACE = "better_hypixel_chat";
 
     public static final Collection<LineRendererProvider> PROVIDERS = Util.make(new ArrayList<>(), list -> {
@@ -48,14 +48,14 @@ public class BetterHypixelChatMod implements ModInitializer {
                 //? if >=26.1 {
                 .registerReloadListener(AddVanillaFont.ID, new AddVanillaFont());
                 //?} else {
-                /*.registerReloader(AddVanillaFont.ID, new AddVanillaFont());*/
-                //?}
+                /*.registerReloader(AddVanillaFont.ID, new AddVanillaFont());
+                *///?}
         ResourceLoader.get(PackType.CLIENT_RESOURCES)
                 //? if >=26.1 {
                 .addListenerOrdering(
                 //?} else {
-                /*.addReloaderOrdering(*/
-                //?}
+                /*.addReloaderOrdering(
+                *///?}
                         net.fabricmc.fabric.api.resource.v1.reloader.ResourceReloaderKeys.Client.FONTS,
                         AddVanillaFont.ID
                 );
@@ -71,7 +71,11 @@ public class BetterHypixelChatMod implements ModInitializer {
         if (FabricLoader.getInstance().isModLoaded("chatpatches")) {
             Identifier identifier = id("chatpatches_compat");
             ClientPlayConnectionEvents.JOIN.register(identifier, (handler, sender, client) -> {
-                if (isOnHypixel()) client.gui.getChat().rescaleChat();
+                //? if >=26.2 {
+                if (isOnHypixel()) client.gui.hud.getChat().rescaleChat();
+                //? } else {
+                /*if (isOnHypixel()) client.gui.getChat().rescaleChat();*/
+                //? }
             });
             ClientPlayConnectionEvents.JOIN.addPhaseOrdering(Event.DEFAULT_PHASE, identifier); // run after chat patches
         }
